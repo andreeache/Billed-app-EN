@@ -47,6 +47,13 @@ export default ({ data: bills, loading, error }) => {
   } else if (error) {
     return ErrorPage(error)
   }
+
+  const sortBills = (a, b) => {
+    try { return a.date > b.date ? 1 : -1;}
+    catch(err){
+      return -1
+    }
+  };
   
   return (`
     <div class='layout'>
@@ -69,7 +76,7 @@ export default ({ data: bills, loading, error }) => {
               </tr>
           </thead>
           <tbody data-testid="tbody">
-            ${rows(bills)}
+            ${rows(bills.sort(sortBills))}
           </tbody>
           </table>
         </div>
