@@ -76,7 +76,7 @@ export default ({ data: bills, loading, error }) => {
               </tr>
           </thead>
           <tbody data-testid="tbody">
-            ${rows(bills.sort(sortBills))}
+            ${rows(typeof bills === "undefined" ? bills : bills.sort(sortBills))}
           </tbody>
           </table>
         </div>
