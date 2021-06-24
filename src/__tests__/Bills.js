@@ -65,4 +65,44 @@ describe("Given I am connected as an employee", () => {
       expect(dates).toEqual(datesSorted);
     });
   });
+
+  describe("When I click the eye icon", () => {
+    test("Then a modal should be open", () => {
+      jest.mock("../app/Firestore");
+      Firestore.bills = () => ({ bills, get: jest.fn().mockResolvedValue() });
+      Object.defineProperty(window, "localStorage", {
+        value: localStorageMock,
+      });
+      window.localStorage.setItem(
+        "user",
+        JSON.stringify({
+          type: "Employee",
+        })
+      );
+      const html = BillsUI({ data: bills });
+      document.body.innerHTML = html;
+      // wire jquery modal property to a jest stub function and verify if the parameter value is "show"
+      jQuery.prototype.modal = jest.fn((p) => {
+        expect(p).toBe("show");
+      });
+      const allBills = new Bills({
+        document,
+        onNavigate,
+        Firestore,
+        localStorage: window.localStorage,
+      });
+
+      const eye = screen.getAllByTestId("icon-eye")[0];
+      const handleClickIconEye = jest.fn(() => {
+        allBills.handleClickIconEye(eye);
+      });
+      eye.addEventListener("click", handleClickIconEye);
+
+      fireEvent.click(eye);
+
+      expect(handleClickIconEye).toHaveBeenCalled();
+      const modale = document.getElementById("modaleFile");
+      expect(modale).toBeTruthy();
+    });
+  });
 });
