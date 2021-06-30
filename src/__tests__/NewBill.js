@@ -105,10 +105,9 @@ describe("Given I am connected as an employee", () => {
         localStorage: localStorageMock,
       });
 
-      // overwrite the change event with the jest wrapper
-      // const handleChangeFile = jest.fn(newBill.handleChangeFile);
+
       const inputFile = screen.getByTestId("file");
-      // inputFile.addEventListener("change", handleChangeFile);
+
 
       // set the input file to our file
       fireEvent.change(inputFile, {
@@ -139,3 +138,52 @@ describe("Given I am connected as an employee", () => {
     });
   });
 });
+
+//Post NewBill integration test
+
+describe("Given I am a user connected as Employee", () => {
+  describe("When I create a new bill", () => {
+    test("Add bill to mock API POST", async () => {
+      const getSpyPost = jest.spyOn(firebase, "post");
+      const newBill = {
+        id: "qcCK3SzECmaZAGRrHjaC",
+        status: "refused",
+        pct: 20,
+        amount: 200,
+        email: "a@a",
+        name: "test2",
+        vat: "40",
+        fileName: "preview-facture-free-201801-pdf-1.jpg",
+        date: "2004-02-02",
+        commentAdmin: "pas la bonne facture",
+        commentary: "test2",
+        type: "Restaurants et bars",
+        fileUrl:
+          "https://firebasestorage.googleapis.com/v0/b/billable-677b6.a…f-1.jpg?alt=media&token=4df6ed2c-12c8-42a2-b013-346c1346f732",
+      };
+      const bills = await firebase.post(newBill);
+      expect(getSpyPost).toHaveBeenCalledTimes(1);
+      expect(bills.data.length).toBe(5);
+      expect(bills.data[4].date).toBe("2004-02-02");
+    });
+    test("Add bill to API and fails with 404 message error", async () => {
+      firebase.post.mockImplementationOnce(() =>
+        Promise.reject(new Error("Erreur 404"))
+      );
+      const html = BillsUI({ error: "Erreur 404" });
+      document.body.innerHTML = html;
+      const message = await screen.getByText(/Erreur 404/);
+      expect(message).toBeTruthy();
+    });
+    test("Add bill to API and fails with 500 message error", async () => {
+      firebase.post.mockImplementationOnce(() =>
+        Promise.reject(new Error("Erreur 404"))
+      );
+      const html = BillsUI({ error: "Erreur 500" });
+      document.body.innerHTML = html;
+      const message = await screen.getByText(/Erreur 500/);
+      expect(message).toBeTruthy();
+    });
+  });
+});
+
