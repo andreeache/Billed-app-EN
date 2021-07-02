@@ -12,8 +12,11 @@ import Firestore from "../app/Firestore";
 describe("Given I am connected as an employee", () => {
   describe("When I am on Bills Page", () => {
     test("Then the page should contain a loading section", () => {
+      // create a general mock for the firestore module
       jest.mock("../app/Firestore");
       Firestore.bills = () => ({ bills, get: jest.fn().mockResolvedValue() });
+      // add a local storage mock for the window and set the user property to Employee
+      // so the bills.getbills() will be able to extract this field
       Object.defineProperty(window, "localStorage", {
         value: localStorageMock,
       });
@@ -23,11 +26,13 @@ describe("Given I am connected as an employee", () => {
           type: "Employee",
         })
       );
+      // Route to the Bills (#employee/bills)
       const pathname = ROUTES_PATH["Bills"];
       Object.defineProperty(window, "location", { value: { hash: pathname } });
       document.body.innerHTML = `<div id="root"></div>`;
       Router();
 
+      // expect to find an item that has id "loading-div" and contains the text "Loading..."
       expect(
         screen.getByTestId("loading-div").innerHTML.includes("Loading...")
       ).toBe(true);
@@ -36,38 +41,54 @@ describe("Given I am connected as an employee", () => {
     test("Then bills should be ordered from earliest to latest", () => {
       const html = BillsUI({ data: bills });
       document.body.innerHTML = html;
+      // retrieve the displayed dates
       const dates = screen
         .getAllByText(
           /^(19|20)\d\d[- /.](0[1-9]|1[012])[- /.](0[1-9]|[12][0-9]|3[01])$/i
         )
         .map((a) => a.innerHTML);
+      // and now sort the retrieved values
       const chrono = (a, b) => (a > b ? 1 : -1);
       const datesSorted = [...dates].sort(chrono);
+      // expect that the retrieved entries are the same as the sorted ones
       expect(dates).toEqual(datesSorted);
     });
 
-    test("Then if date is invalid it should return -1", () => {
+    test("Then all the dates in the test set should be displayed", () => {
       let myBills = bills;
-      let b = myBills[0];
-      delete b.date;
-      myBills[0] = b;
+      // clean the date from the first bill
       const html = BillsUI({ data: myBills });
       document.body.innerHTML = html;
+      // match the dates on the screen using a regular expression
       const dates = screen
         .getAllByText(
           /^(19|20)\d\d[- /.](0[1-9]|1[012])[- /.](0[1-9]|[12][0-9]|3[01])$/i
         )
         .map((a) => a.innerHTML);
-      const chrono = (a, b) => (a > b ? 1 : -1);
-      const datesSorted = [...dates].sort(chrono);
+      // expect that the output has the same length as the input
+      expect(dates.length).toBe(myBills.length);
+    });
 
-      expect(myBills[0].data).toBe(undefined);
-      expect(dates).toEqual(datesSorted);
+    test("Then if date is invalid it should not crash", () => {
+      let myBills = bills;
+      // clean the date from the first bill
+      delete myBills[0].date;
+      const html = BillsUI({ data: myBills });
+      document.body.innerHTML = html;
+      // match the dates on the screen using a regular expression
+      const dates = screen
+        .getAllByText(
+          /^(19|20)\d\d[- /.](0[1-9]|1[012])[- /.](0[1-9]|[12][0-9]|3[01])$/i
+        )
+        .map((a) => a.innerHTML);
+      // expect one less date in the screen matched list
+      expect(dates.length).toBe(3);
     });
   });
 
   describe("When I click the eye icon", () => {
     test("Then a modal should be open", () => {
+      // mock the document as above
       jest.mock("../app/Firestore");
       Firestore.bills = () => ({ bills, get: jest.fn().mockResolvedValue() });
       Object.defineProperty(window, "localStorage", {
@@ -92,21 +113,25 @@ describe("Given I am connected as an employee", () => {
         localStorage: window.localStorage,
       });
 
+      // find the first eye element on the screen
       const eye = screen.getAllByTestId("icon-eye")[0];
+      // wire a mocked function (that still calles the regular one) to the click action
       const handleClickIconEye = jest.fn(() => {
         allBills.handleClickIconEye(eye);
       });
       eye.addEventListener("click", handleClickIconEye);
 
+      // and simulate a click on the eye element
       fireEvent.click(eye);
 
+      // expect our mock function to be called
       expect(handleClickIconEye).toHaveBeenCalled();
+      // and expect a modal to be displayed
       const modale = document.getElementById("modaleFile");
       expect(modale).toBeTruthy();
     });
   });
 });
-
 
 // GET Bills integration test
 
