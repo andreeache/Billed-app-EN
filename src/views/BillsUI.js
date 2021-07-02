@@ -46,7 +46,7 @@ export default ({ data: bills, loading, error }) => {
   } else if (error) {
     return ErrorPage(error);
   }
-
+// sort function for dates
   const sortBills = (a, b) => {
     try {
       return a.date.test == undefined &&

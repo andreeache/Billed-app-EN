@@ -153,7 +153,7 @@ export default class {
       $(`#status-bills-container${this.index}`).html("");
       this.counter++;
     }
-
+    // modify on click only for the bills in this category
     filteredBills(bills, getStatus(this.index)).forEach((bill) => {
       $(`#open-bill${bill.id}`).click((e) =>
         this.handleEditTicket(e, bill, bills)

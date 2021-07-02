@@ -131,6 +131,59 @@ describe("Given I am connected as an employee", () => {
       expect(modale).toBeTruthy();
     });
   });
+
+  describe("When I click the New fee button", () => {
+    test("Then a new fee modal should be opened", () => {
+      // mock the document as above
+      jest.mock("../app/Firestore");
+      Firestore.bills = () => ({ bills, get: jest.fn().mockResolvedValue() });
+      Object.defineProperty(window, "localStorage", {
+        value: localStorageMock,
+      });
+      window.localStorage.setItem(
+        "user",
+        JSON.stringify({
+          type: "Employee",
+        })
+      );
+      const html = BillsUI({ data: bills });
+      document.body.innerHTML = html;
+      // wire jquery modal property to a jest stub function and verify if the parameter value is "show"
+      jQuery.prototype.modal = jest.fn((p) => {
+        expect(p).toBe("show");
+      });
+      onNavigate = (pathname) => {
+        document.body.innerHTML = ROUTES({ pathname });
+      };
+
+      // also cover the negative(else) case for the iconeye
+      document.querySelectorAll = (filter) => {
+        return null;
+      };
+
+      const allBills = new Bills({
+        document,
+        onNavigate,
+        Firestore,
+        localStorage: window.localStorage,
+      });
+
+      // find the button on the screen
+      const btn = screen.getByTestId("btn-new-bill");
+      // wire a mocked function (that still calles the regular one) to the click action
+      const handleClickNewBill = jest.fn(allBills.handleClickNewBill);
+      btn.addEventListener("click", handleClickNewBill);
+
+      // and simulate a click on the button
+      fireEvent.click(btn);
+
+      // expect our mock function to be called
+      expect(handleClickNewBill).toHaveBeenCalled();
+      // and expect a modal to be displayed
+      const sendAFeeTitle = screen.getByText("Send a fee");
+      expect(sendAFeeTitle).toBeTruthy();
+    });
+  });
 });
 
 // GET Bills integration test
