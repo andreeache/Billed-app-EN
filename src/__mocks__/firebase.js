@@ -73,8 +73,10 @@ export default {
     });
   },
   post: async (request) => {
+    // calls the get method up
     const getData = await firebase.get();
 
+    // returns the original bills + the new one
     return Promise.resolve({
       data: [
         ...getData.data,

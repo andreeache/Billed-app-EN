@@ -16,7 +16,7 @@ describe("Given I am connected as an employee", () => {
       jest.mock("../app/Firestore");
       Firestore.bills = () => ({ bills, get: jest.fn().mockResolvedValue() });
       // add a local storage mock for the window and set the user property to Employee
-      // so the bills.getbills() will be able to extract this field
+      // so the bills.getbills()   i                                                                                                                                                                                                                   f                  will be able to extract this field
       Object.defineProperty(window, "localStorage", {
         value: localStorageMock,
       });
@@ -28,6 +28,7 @@ describe("Given I am connected as an employee", () => {
       );
       // Route to the Bills (#employee/bills)
       const pathname = ROUTES_PATH["Bills"];
+      // set window.location.hash for the calls in Router.js
       Object.defineProperty(window, "location", { value: { hash: pathname } });
       document.body.innerHTML = `<div id="root"></div>`;
       Router();

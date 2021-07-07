@@ -154,6 +154,7 @@ export default class {
       this.counter++;
     }
     // modify on click only for the bills in this category
+    // otherwise we set the click action for the open bills but with the wrong bill id
     filteredBills(bills, getStatus(this.index)).forEach((bill) => {
       $(`#open-bill${bill.id}`).click((e) =>
         this.handleEditTicket(e, bill, bills)

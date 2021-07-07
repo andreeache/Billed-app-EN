@@ -14,6 +14,7 @@ import { ROUTES, ROUTES_PATH } from "../constants/routes";
 describe("Given I am connected as an employee", () => {
   describe("When I am on NewBill Page", () => {
     test("Then the input image is propagated into handleChangeFile", () => {
+      // create a function that just punts the request to the router
       const onNavigate = (pathname) => {
         document.body.innerHTML = ROUTES({ pathname });
       };
@@ -31,7 +32,7 @@ describe("Given I am connected as an employee", () => {
 
       // add mock for the calls in handleChangeFile
       firestore.storage.ref = (e) => {
-        expect(e).toBe("justificatifs/");
+        expect(e).toBe("justificatifs/"); // the filename variable will be empty in containers/NewBill.js
 
         // we have to return an object that has a put method
         let rv = new Object();
@@ -83,20 +84,6 @@ describe("Given I am connected as an employee", () => {
       const html = NewBillUI();
       document.body.innerHTML = html;
 
-      // add mock for the calls in handleChangeFile
-      firestore.storage.ref = (e) => {
-        expect(e).toBe("justificatifs/");
-
-        // we have to return an object that has a put method
-        let rv = new Object();
-        rv.put = (file) => {
-          expect(file.name).toBe("myimage.jpg");
-          // return an empty promise just to be able to call then on it
-          return new Promise((a) => {});
-        };
-        return rv;
-      };
-
       // create the bill instance
       const newBill = new NewBill({
         document,
@@ -105,25 +92,13 @@ describe("Given I am connected as an employee", () => {
         localStorage: localStorageMock,
       });
 
-
-      const inputFile = screen.getByTestId("file");
-
-
-      // set the input file to our file
-      fireEvent.change(inputFile, {
-        target: {
-          files: [
-            new File(["myimage.jpg"], "myimage.jpg", { type: "image/jpeg" }),
-          ],
-        },
-      });
-
       firestore.store.collection = (e) => {
         expect(e).toBe("bills");
 
         let rv = new Object();
         rv.add = (e) => {
           expect(e.pct).toBe(20);
+          expect(e.status).toBe("pending");
           return new Promise((a) => {});
         };
         return rv;
@@ -147,7 +122,7 @@ describe("Given I am a user connected as Employee", () => {
       const getSpyPost = jest.spyOn(firebase, "post");
       const newBill = {
         id: "qcCK3SzECmaZAGRrHjaC",
-        status: "refused",
+        status: "pending",
         pct: 20,
         amount: 200,
         email: "a@a",
@@ -166,6 +141,7 @@ describe("Given I am a user connected as Employee", () => {
       expect(bills.data.length).toBe(5);
       expect(bills.data[4].date).toBe("2004-02-02");
     });
+
     test("Add bill to API and fails with 404 message error", async () => {
       firebase.post.mockImplementationOnce(() =>
         Promise.reject(new Error("Erreur 404"))
@@ -175,6 +151,7 @@ describe("Given I am a user connected as Employee", () => {
       const message = await screen.getByText(/Erreur 404/);
       expect(message).toBeTruthy();
     });
+    
     test("Add bill to API and fails with 500 message error", async () => {
       firebase.post.mockImplementationOnce(() =>
         Promise.reject(new Error("Erreur 404"))
