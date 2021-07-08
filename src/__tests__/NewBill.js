@@ -31,7 +31,7 @@ describe("Given I am connected as an employee", () => {
       document.body.innerHTML = html;
 
       // add mock for the calls in handleChangeFile
-      firestore.storage.ref = (e) => {
+      firestore.storage.ref = jest.fn((e) => {
         expect(e).toBe("justificatifs/"); // the filename variable will be empty in containers/NewBill.js
 
         // we have to return an object that has a put method
@@ -42,7 +42,7 @@ describe("Given I am connected as an employee", () => {
           return new Promise((a) => {});
         };
         return rv;
-      };
+      });
 
       // create the bill instance
       const newBill = new NewBill({
@@ -66,6 +66,63 @@ describe("Given I am connected as an employee", () => {
         },
       });
       expect(handleChangeFile).toHaveBeenCalled();
+      expect(firestore.storage.ref).toHaveBeenCalled();
+    });
+
+    test("Then if the input image filename is not png/jpg/jpeg then it's not accepted by handleChangeFile", () => {
+      // create a function that just punts the request to the router
+      const onNavigate = (pathname) => {
+        document.body.innerHTML = ROUTES({ pathname });
+      };
+      Object.defineProperty(window, "localStorage", {
+        value: localStorageMock,
+      });
+      window.localStorage.setItem(
+        "user",
+        JSON.stringify({
+          type: "Employee",
+        })
+      );
+      const html = NewBillUI();
+      document.body.innerHTML = html;
+
+      // add mock for the calls in handleChangeFile
+      firestore.storage.ref = jest.fn((e) => {
+        expect(e).toBe("justificatifs/"); // the filename variable will be empty in containers/NewBill.js
+
+        // we have to return an object that has a put method
+        let rv = new Object();
+        rv.put = (file) => {
+          expect(file.name).toBe("myimage.jpm");
+          // return an empty promise just to be able to call then on it
+          return new Promise((a) => {});
+        };
+        return rv;
+      });
+
+      // create the bill instance
+      const newBill = new NewBill({
+        document,
+        onNavigate,
+        firestore: firestore,
+        localStorage: localStorageMock,
+      });
+
+      // overwrite the change event with the jest wrapper
+      const handleChangeFile = jest.fn(newBill.handleChangeFile);
+      const inputFile = screen.getByTestId("file");
+      inputFile.addEventListener("change", handleChangeFile);
+
+      // set the input file to our file
+      fireEvent.change(inputFile, {
+        target: {
+          files: [
+            new File(["myimage.jpm"], "myimage.jpm", { type: "image/jpeg" }),
+          ],
+        },
+      });
+      expect(handleChangeFile).toHaveBeenCalled();
+      expect(firestore.storage.ref).not.toHaveBeenCalled();
     });
 
     test("Then when I click on submit, it creates a new pending bill", () => {
@@ -151,7 +208,7 @@ describe("Given I am a user connected as Employee", () => {
       const message = await screen.getByText(/Erreur 404/);
       expect(message).toBeTruthy();
     });
-    
+
     test("Add bill to API and fails with 500 message error", async () => {
       firebase.post.mockImplementationOnce(() =>
         Promise.reject(new Error("Erreur 404"))
@@ -163,4 +220,3 @@ describe("Given I am a user connected as Employee", () => {
     });
   });
 });
-
